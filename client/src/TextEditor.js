@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom';
 
 import 'quill/dist/quill.snow.css';
 
+const SAVE_INTERVAL_MS = 2000;
 const TOOLBAR_OPTIONS = [
   [
     {
@@ -77,6 +78,18 @@ function TextEditor() {
 
     return () => {
       socket.off('receive-changes', handler);
+    };
+  }, [socket, quill]);
+
+  useEffect(() => {
+    if (!socket || !quill) return;
+
+    const interval = setInterval(() => {
+      socket.emit('save-document', quill.getContents());
+    }, SAVE_INTERVAL_MS);
+
+    return () => {
+      clearInterval(interval);
     };
   }, [socket, quill]);
 
