@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import Quill from 'quill';
 import { io } from 'socket.io-client';
+import { useParams } from 'react-router-dom';
 
 import 'quill/dist/quill.snow.css';
 
@@ -32,8 +33,10 @@ const TOOLBAR_OPTIONS = [
 ];
 
 function TextEditor() {
+  const { id: documentId } = useParams();
   const [socket, setSocket] = useState();
   const [quill, setQuill] = useState();
+  console.log(documentId);
   useEffect(() => {
     const soc = io('http://localhost:3001');
     setSocket(soc);
@@ -42,6 +45,15 @@ function TextEditor() {
       soc.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (!socket || !quill) return;
+    socket.once('load-document', (document) => {
+      quill.setContents(document);
+      quill.enable();
+    });
+    socket.emit('get-document', documentId);
+  }, [socket, quill, documentId]);
 
   useEffect(() => {
     if (!socket || !quill) return;
@@ -79,6 +91,8 @@ function TextEditor() {
         toolbar: TOOLBAR_OPTIONS,
       },
     });
+    q.disable();
+    q.setText('Loading...');
     setQuill(q);
     //
   }, []);
