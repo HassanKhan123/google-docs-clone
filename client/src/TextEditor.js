@@ -42,6 +42,32 @@ function TextEditor() {
       soc.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (!socket || !quill) return;
+    const handler = (delta, oldData, source) => {
+      if (source !== 'user') return;
+      socket.emit('send-changes', delta);
+    };
+    quill.on('text-change', handler);
+
+    return () => {
+      socket.off('text-change', handler);
+    };
+  }, [socket, quill]);
+
+  useEffect(() => {
+    if (!socket || !quill) return;
+    const handler = (delta) => {
+      quill.updateContents(delta);
+    };
+    socket.on('receive-changes', handler);
+
+    return () => {
+      socket.off('receive-changes', handler);
+    };
+  }, [socket, quill]);
+
   const wrapperRef = useCallback((wrapper) => {
     if (!wrapper) return;
     wrapper.innerHTML = '';
